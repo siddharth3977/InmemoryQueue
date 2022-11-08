@@ -27,8 +27,8 @@ consumerD = ConsumerThread(4)
 
 inMemoryQueueProcessor.registerConsumer(consumerA, 1,  r'200', [])
 inMemoryQueueProcessor.registerConsumer(consumerB, 2,  r'400', [])
-inMemoryQueueProcessor.registerConsumer(consumerC, 3, r'200', [1])
-inMemoryQueueProcessor.registerConsumer(consumerD, 4, None, [])
+inMemoryQueueProcessor.registerConsumer(consumerC, 3, None, [])
+inMemoryQueueProcessor.registerConsumer(consumerD, 4, None, [3])
 
 consumerA.start()
 consumerB.start()

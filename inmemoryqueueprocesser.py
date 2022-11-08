@@ -11,6 +11,7 @@ import re
 import time
 from consumer import Consumer
 from inmemoryqueue import InMemoryQueue
+from cycledetector import CycleDetector
 
 
 class InMemoryQueueProcessor:
@@ -21,6 +22,7 @@ class InMemoryQueueProcessor:
         self.threadPoolExecutor = ThreadPoolExecutor(workers)
         self.submittedTask = []
         self.consumerMap = {}
+        self.subscriptionMap = {}
         self.deadLetterQueue = InMemoryQueue(1000)
         
             
@@ -32,10 +34,12 @@ class InMemoryQueueProcessor:
         self.submittedTask.append(futuretask)
     
     def registerConsumer(self, consumer, id, pattern, dependecyList):
-        self.checkCyclicDependency(id, dependecyList)
         consumerObj = Consumer(consumer, id, pattern, dependecyList, self.deadLetterQueue)
+        self.subscriptionMap[id] = dependecyList
+        self.checkCyclicDependency(id)
         self.consumerList.append(consumerObj)
         self.consumerMap[id] = consumerObj
+        
         
         
     def sendMessageToConsumer(self):
@@ -52,8 +56,8 @@ class InMemoryQueueProcessor:
                     for dependentConsumer in dependentConsumersList:
                         if dependentConsumer in sentList:
                             continue
-                        dependentConsumerObj = self.consumerMap[dependentConsumer.getId()]
-                        self.sendMessage(dependentConsumerObj, message)
+                        dependentConsumerObj = self.consumerMap[dependentConsumer]
+                        self.sendMessage(dependentConsumerObj, message, ttl)
                         sentList.append(dependentConsumerObj.getId())
                     self.sendMessage(consumer, message, ttl)
                     sentList.append(consumer.getId())
@@ -63,11 +67,11 @@ class InMemoryQueueProcessor:
         consumer.sendMessage(message, ttl)
         
     
-    def checkCyclicDependency(self, id, dependecyList):
-        for dependentConsumer in dependecyList:
-            dependentConsumerObj = self.consumerMap[dependentConsumer]
-            if id in dependentConsumerObj.getDependentConsumer():
-                raise Exception("cyclic dependeny found")
+                
+    def checkCyclicDependency(self, id):   
+        cycleDetector = CycleDetector()
+        if not cycleDetector.checkCyclicDependency(self.subscriptionMap):
+            raise Exception("cyclic dependency")
                     
 
     def completeAllTask(self):
