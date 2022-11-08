@@ -6,6 +6,7 @@ Created on Sun Nov  6 00:06:25 2022
 """
 
 from node import Node
+from acknowledgements import Acknowledgement
 
 class Consumer:
     def __init__(self, externalConsumer, id, pattern, dependencyList, deadLetterQueue):
@@ -30,7 +31,9 @@ class Consumer:
         retry = 3
         while(retry > 0):
             try:
-                self.externalConsumer.process(message)
+                ack = self.externalConsumer.process(message)
+                if ack == Acknowledgement.NEGATIVE:
+                    raise Exception("retry delivery of message")
                 break
             except Exception as e:
                 print(e)

@@ -63,8 +63,6 @@ class InMemoryQueueProcessor:
         consumer.sendMessage(message, ttl)
         
     
-    
-    
     def checkCyclicDependency(self, id, dependecyList):
         for dependentConsumer in dependecyList:
             dependentConsumerObj = self.consumerMap[dependentConsumer]
